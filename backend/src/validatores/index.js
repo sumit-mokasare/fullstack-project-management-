@@ -37,4 +37,13 @@ const userLoginValidator = () => {
   ];
 };
 
-export { userLoginValidator, userRegistrationValidatore };
+//========= project validetor  ======
+
+const projectCreateValidetor = () => {
+  return [
+    body('name').notEmpty().trim().isLength({ min: 3 }).withMessage('Project name is Invalid'),
+    body('description').notEmpty().trim().isLength({ min: 5 }).withMessage('Description is Invalid'),
+  ];
+};
+
+export { userLoginValidator, userRegistrationValidatore, projectCreateValidetor };

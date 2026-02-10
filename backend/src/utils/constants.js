@@ -16,5 +16,7 @@ export const availableTaskStatuses = Object.values(TaskStatusEnum);
 
 export const cookieOptions = {
   httpOnly: true,
-  secure: true,
+  secure: false,
+  path: '/',
+  sameSite: "lax" 
 };

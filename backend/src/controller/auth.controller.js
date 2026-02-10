@@ -180,6 +180,7 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
+
   await User.findByIdAndUpdate(
     req.user._id,
     {
@@ -292,6 +293,8 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   }
 
   user.password = password;
+  user.forgotPasswordToken = undefined
+  user.forgotPasswordTokenExpiry = undefined
   await user.save({ validateBeforeSave: false });
   return res.status(200).json(new apiResponse(200, {}, 'Password successfully changes', true));
 });
