@@ -20,7 +20,7 @@ const createProject = asyncHandler(async (req, res) => {
 
     await ProjectMember.create({
       user: userId,
-      project: new mongoose.Types.ObjectId(project._id),
+      project: mongoose.Types.ObjectId(project._id),
       role: UserRolesEnum.ADMIN,
     });
 
@@ -41,7 +41,7 @@ const getProjects = asyncHandler(async (req, res) => {
   });
 
   console.log(projectsMember);
-  
+
   if (!projectsMember) {
     throw new apiError(404, 'Project Member not found', false);
   }
@@ -77,10 +77,21 @@ const updateProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
   const { name, description } = req.body;
 
+
   const project = await Project.findById(projectId);
 
   if (!project) {
     throw new apiError(404, 'project not found', false);
+  }
+
+  const member = await ProjectMember.findOne({
+    user: new mongoose.Types.ObjectId(req.user._id),
+    project: new mongoose.Types.ObjectId(projectId),
+    role: UserRolesEnum.ADMIN,
+  });
+
+  if (!member) {
+    throw new apiError(404, 'Only admin can update this project', false);
   }
 
   const updatedProject = await Project.findByIdAndUpdate(
@@ -92,6 +103,10 @@ const updateProject = asyncHandler(async (req, res) => {
     { new: true }
   ).populate('createdBy', 'username avatar fullname');
 
+  if (!updateProject) {
+    throw new apiError(404, 'Project while update not found', false);
+  }
+
   return res
     .status(200)
     .json(new apiResponse(200, updatedProject, 'project update successfully', true));
@@ -100,11 +115,24 @@ const updateProject = asyncHandler(async (req, res) => {
 const deleteProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
+  const member = await ProjectMember.findOne({
+    user: new mongoose.Types.ObjectId(req.user._id),
+    project: new mongoose.Types.ObjectId(projectId),
+    role: UserRolesEnum.ADMIN,
+  });
+
+  if (!member) {
+    throw new apiError(404, 'Only admin can delete this project', false);
+  }
+
   const project = await Project.findByIdAndDelete(projectId);
 
   if (!project) {
     throw new apiError(404, 'project not found', false);
   }
+
+  await ProjectMember.deleteMany({ project: projectId });
+  // await.deleteMany({ project: projectId });
 
   return res.status(200).json(new apiResponse(200, {}, 'Project deleted successfully', true));
 });
