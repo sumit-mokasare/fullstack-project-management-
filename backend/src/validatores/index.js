@@ -46,4 +46,12 @@ const projectCreateValidetor = () => {
   ];
 };
 
-export { userLoginValidator, userRegistrationValidatore, projectCreateValidetor };
+
+const projectMemberValidetor = () => {
+  return [
+    body('email').notEmpty().trim().isEmail().withMessage(' Email is not valid'),
+    body('role').notEmpty().trim().withMessage('role is not valid'),
+  ];
+};
+
+export { userLoginValidator, userRegistrationValidatore, projectCreateValidetor , projectMemberValidetor };

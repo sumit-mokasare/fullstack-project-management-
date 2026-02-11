@@ -10,24 +10,43 @@ import { User } from '../models/user.models.js';
 const createProject = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { name, description } = req.body;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    const project = await Project.create({
-      name,
-      description,
-      createdBy: userId,
-    }).populate('createdBy', 'username avatar fullname');
+    const [project] = await Project.create(
+      [
+        {
+          name,
+          description,
+          createdBy: userId,
+        },
+      ],
+      { session }
+    );
 
-    await ProjectMember.create({
-      user: userId,
-      project: mongoose.Types.ObjectId(project._id),
-      role: UserRolesEnum.ADMIN,
-    });
+    await ProjectMember.create(
+      [
+        {
+          user: userId,
+          project: project._id,
+          role: UserRolesEnum.ADMIN,
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    await project.populate('createdBy', 'username avatar fullname');
 
     return res
       .status(201)
       .json(new apiResponse(201, project, 'project created successfully', true));
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.log('Error to create Project', error);
   }
 });
@@ -76,7 +95,6 @@ const getProjectsById = asyncHandler(async (req, res) => {
 const updateProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
   const { name, description } = req.body;
-
 
   const project = await Project.findById(projectId);
 
@@ -138,6 +156,8 @@ const deleteProject = asyncHandler(async (req, res) => {
 });
 
 const addMemberToProject = asyncHandler(async (req, res) => {
+  console.log('user inside controller ==', req.user);
+
   const { projectId } = req.params;
   const { email, role } = req.body;
 
@@ -148,8 +168,8 @@ const addMemberToProject = asyncHandler(async (req, res) => {
   }
 
   const exist = await ProjectMember.findOne({
-    project: mongoose.Types.ObjectId(projectId),
-    user: mongoose.Types.ObjectId(user._id),
+    project: projectId,
+    user: user._id,
   });
 
   if (exist) {
@@ -157,21 +177,94 @@ const addMemberToProject = asyncHandler(async (req, res) => {
   }
 
   const member = await ProjectMember.create({
-    user: mongoose.Types.ObjectId(user._id),
-    project: mongoose.Types.ObjectId(projectId),
+    user: user._id,
+    project: projectId,
     role: role,
   });
 
   return res.status(201).json(new apiResponse(201, member, 'Member added successfully', true));
 });
 
-const getProjectMembers = asyncHandler(async (req, res) => {});
+const getProjectMembers = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+  console.log(projectId);
 
-const updateProjectMembers = asyncHandler(async (req, res) => {});
+  const members = await ProjectMember.find({
+    project: projectId,
+  }).populate('user', 'fullname avatar username');
 
-const updateMemberRole = asyncHandler(async (req, res) => {});
+  if (!members) {
+    throw new apiError(400, 'membs not found', false);
+  }
 
-const deleteMember = asyncHandler(async (req, res) => {});
+  return res.status(200).json(new apiResponse(200, members, 'membes fetch successfully'));
+});
+
+const updateProjectMembers = asyncHandler(async (req, res) => {
+  const { projectId, memberId } = req.params;
+  const { email } = req.body;
+
+  const newUser = await User.findOne({ email });
+  console.log(newUser);
+
+  if (!newUser) {
+    throw new apiError(400, 'User not found', false);
+  }
+
+  const alreadyMember = await ProjectMember.findOne({
+    user: newUser._id,
+    project: projectId,
+  });
+
+  console.log(alreadyMember);
+
+  if (alreadyMember) {
+    throw new apiError(400, 'User is already a member', false);
+  }
+
+  const updatedMamber = await ProjectMember.findByIdAndUpdate(
+    memberId,
+    {
+      user: newUser._id,
+    },
+    { new: true }
+  ).populate('user', 'fullname avatar username');
+
+  if (!updatedMamber) {
+    throw new apiError(401, 'mamber not updated', false);
+  }
+
+  return res.status(200).json(new apiResponse(200, updatedMamber, 'Member update successfully'));
+});
+
+const updateMemberRole = asyncHandler(async (req, res) => {
+  const { memberId } = req.params;
+  const { role } = req.body;
+
+  // 3. Update role
+  const updated = await ProjectMember.findByIdAndUpdate(memberId, { role }, { new: true }).populate(
+    'user',
+    'fullname avatar username'
+  );
+
+  if (!updated) {
+    throw new apiError(404, 'Member not found');
+  }
+
+  return res.status(200).json(new apiResponse(200, updated, 'Role updated successfully'));
+});
+
+const deleteMember = asyncHandler(async (req, res) => {
+  const { memberId } = req.params;
+
+  const member = await ProjectMember.findByIdAndDelete(memberId);
+
+  if (!member) {
+    throw new apiError(400, 'mamber not found', false);
+  }
+
+  return res.status(200).json(new apiResponse(200, updated, 'Member delete successfully'));
+});
 
 export {
   createProject,
@@ -180,4 +273,8 @@ export {
   updateProject,
   deleteProject,
   addMemberToProject,
+  getProjectMembers,
+  updateProjectMembers,
+  updateMemberRole,
+  deleteMember, 
 };

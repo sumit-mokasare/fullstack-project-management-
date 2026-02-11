@@ -43,7 +43,7 @@ const verifyJwt = asyncHandler(async (req, res, next) => {
 const validateProjectPermissions = (roles = []) =>
   asyncHandler(async (req, res, next) => {
     console.log(req.user);
-    
+
     const { projectId } = req.params;
 
     if (!projectId) {
@@ -51,22 +51,50 @@ const validateProjectPermissions = (roles = []) =>
     }
 
     const projectMember = await ProjectMember.findOne({
-      project: mongoose.Types.ObjectId(projectId),
-      user: mongoose.Types.ObjectId(req.user._id),
+      project: projectId,
+      user: req.user._id,
     });
 
     if (!projectMember) {
       throw new apiError(403, 'Project  not found ', false);
     }
-    
+
     const givenRole = projectMember.role;
+
+    console.log('givenRolee', givenRole);
+
     req.user.role = givenRole;
-    
+
     if (!roles.includes(givenRole)) {
       throw new apiError(403, 'You do not have permission to perform this action', false);
     }
 
-    next()
+    next();
   });
 
-export { verifyJwt , validateProjectPermissions };
+const isProjctAdmin = (roles = []) =>
+  asyncHandler(async (req, _, next) => {
+    const { projectId } = req.params;
+
+    if (!projectId) {
+      throw new apiError(400, 'Project ID is missing', false);
+    }
+
+    const member = await ProjectMember.findOne({
+      user: req.user._id,
+      project: projectId,
+    });
+
+    if (!member) {
+      throw new apiError(403, 'You are not a member of this project');
+    }
+
+    if (!roles.includes(member.role)) {
+      throw new apiError(403, "you don't have permission to perform this action");
+    }
+
+    req.projectMember = member
+    next();
+  });
+
+export { verifyJwt, validateProjectPermissions, isProjctAdmin };
