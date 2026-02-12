@@ -6,6 +6,7 @@ import { UserRolesEnum } from '../utils/constants.js';
 import { apiResponse } from '../utils/api-response.js';
 import { apiError } from '../utils/api-error.js';
 import { User } from '../models/user.models.js';
+import { ProjectNote } from '../models/note.models.js';
 
 const createProject = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -150,7 +151,7 @@ const deleteProject = asyncHandler(async (req, res) => {
   }
 
   await ProjectMember.deleteMany({ project: projectId });
-  // await.deleteMany({ project: projectId });
+  await ProjectNote.deleteMany({ project: projectId });
 
   return res.status(200).json(new apiResponse(200, {}, 'Project deleted successfully', true));
 });
@@ -216,8 +217,6 @@ const updateProjectMembers = asyncHandler(async (req, res) => {
     project: projectId,
   });
 
-  console.log(alreadyMember);
-
   if (alreadyMember) {
     throw new apiError(400, 'User is already a member', false);
   }
@@ -257,13 +256,13 @@ const updateMemberRole = asyncHandler(async (req, res) => {
 const deleteMember = asyncHandler(async (req, res) => {
   const { memberId } = req.params;
 
-  const member = await ProjectMember.findByIdAndDelete(memberId);
+  const member = await ProjectMember.findByIdAndDelete(memberId).populate('user', 'fullname avatar username');
 
   if (!member) {
     throw new apiError(400, 'mamber not found', false);
   }
 
-  return res.status(200).json(new apiResponse(200, updated, 'Member delete successfully'));
+  return res.status(200).json(new apiResponse(200, member, 'Member delete successfully'));
 });
 
 export {

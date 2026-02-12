@@ -42,10 +42,13 @@ const userLoginValidator = () => {
 const projectCreateValidetor = () => {
   return [
     body('name').notEmpty().trim().isLength({ min: 3 }).withMessage('Project name is Invalid'),
-    body('description').notEmpty().trim().isLength({ min: 5 }).withMessage('Description is Invalid'),
+    body('description')
+      .notEmpty()
+      .trim()
+      .isLength({ min: 5 })
+      .withMessage('Description is Invalid'),
   ];
 };
-
 
 const projectMemberValidetor = () => {
   return [
@@ -54,4 +57,14 @@ const projectMemberValidetor = () => {
   ];
 };
 
-export { userLoginValidator, userRegistrationValidatore, projectCreateValidetor , projectMemberValidetor };
+const updateProjectMembersValidetor = () => {
+  return [body('email').notEmpty().trim().isEmail().withMessage(' Email is not valid')];
+};
+
+export {
+  userLoginValidator,
+  userRegistrationValidatore,
+  projectCreateValidetor,
+  projectMemberValidetor,
+  updateProjectMembersValidetor,
+};

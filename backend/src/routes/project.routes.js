@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { isProjctAdmin, verifyJwt } from '../middlewares/auth.middleswares.js';
 import { validate } from '../middlewares/validator.middleware.js';
-import { projectCreateValidetor, projectMemberValidetor } from '../validatores/index.js';
+import { projectCreateValidetor, projectMemberValidetor, updateProjectMembersValidetor } from '../validatores/index.js';
 import { upload } from '../middlewares/multer.middleware.js';
 import {
   addMemberToProject,
@@ -19,43 +19,35 @@ import { UserRolesEnum } from '../utils/constants.js';
 
 const router = Router();
 
+router.use(verifyJwt);
+router.use(upload.none());
+
+// ===== project routes ==== 
+
+router.route('/createProject').post(projectCreateValidetor(), validate, createProject);
+router.route('/getProject').get(getProjects);
 router
-  .route('/createProject')
-  .post(upload.none(), verifyJwt, projectCreateValidetor(), validate, createProject);
-router.route('/getProject').get(verifyJwt, getProjects);
-router.route('/projectById/:projectId').get(getProjectsById);
-router
-  .route('/updateProject/:projectId')
-  .patch(
-    upload.none(),
-    verifyJwt,
-    isProjctAdmin([UserRolesEnum.ADMIN]),
-    projectCreateValidetor(),
-    validate,
-    updateProject
-  );
-router
-  .route('/deleteProject/:projectId')
+  .route('/:projectId')
+  .get(getProjectsById)
+  .patch(isProjctAdmin([UserRolesEnum.ADMIN]), projectCreateValidetor(), validate, updateProject)
   .delete(verifyJwt, isProjctAdmin([UserRolesEnum.ADMIN]), deleteProject);
+
+  // ===== project Member routes ==== 
+
 router
   .route('/:projectId/member')
   .post(
-    upload.none(),
-    verifyJwt,
     isProjctAdmin([UserRolesEnum.ADMIN]),
     projectMemberValidetor(),
     validate,
     addMemberToProject
   );
-
 router.route('/getMember/:projectId').get(getProjectMembers);
 router
-  .route('/:projectId/updateMemberUser/:memberId')
-  .post(upload.none(), verifyJwt, isProjctAdmin([UserRolesEnum.ADMIN]), updateProjectMembers);
-router
-  .route('/:projectId/updateMember/:memberId')
-  .post(upload.none(), verifyJwt, isProjctAdmin([UserRolesEnum.ADMIN]), updateMemberRole);
-router
-  .route('/:projectId/deleteMember/:memberId')
-  .get(verifyJwt, isProjctAdmin([UserRolesEnum.ADMIN]), deleteMember);
+  .route('/:projectId/member/:memberId')
+  .patch(updateProjectMembersValidetor() , validate , isProjctAdmin([UserRolesEnum.ADMIN]), updateProjectMembers)
+  .post(isProjctAdmin([UserRolesEnum.ADMIN]), updateMemberRole)
+  .delete(isProjctAdmin([UserRolesEnum.ADMIN]), deleteMember);
+
+
 export default router;
