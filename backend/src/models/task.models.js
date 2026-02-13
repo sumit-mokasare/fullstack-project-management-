@@ -25,8 +25,8 @@ const taskSchema = new Schema({
 
     assignedBy: {
         type: Schema.Types.ObjectId,
-        ref: 'Project',
-        required: [true , 'project ref is required'], // for custom messages if you want to send 
+        ref: 'User',
+        required: [true , 'user ref is required'], // for custom messages if you want to send 
     },
     status: {
         type: String,

@@ -61,10 +61,22 @@ const updateProjectMembersValidetor = () => {
   return [body('email').notEmpty().trim().isEmail().withMessage(' Email is not valid')];
 };
 
+// ======== task  validetor ======
+
+const taskValidetor = () => {
+  return [
+    body('title').notEmpty().isLength({ min: 3 }).withMessage('Invalid of empty title'),
+    body('description').notEmpty().isLength({ min: 5 }).withMessage('Invalid of empty title'),
+    body('email').notEmpty().trim().isEmail().withMessage(' Email is not valid'),
+    body('status').notEmpty().trim().withMessage('status is missing'),
+  ];
+};
+
 export {
   userLoginValidator,
   userRegistrationValidatore,
   projectCreateValidetor,
   projectMemberValidetor,
   updateProjectMembersValidetor,
+  taskValidetor,
 };
