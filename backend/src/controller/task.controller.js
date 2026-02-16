@@ -6,7 +6,7 @@ import { Project } from '../models/project.models.js';
 import { apiError } from '../utils/api-error.js';
 import { apiResponse } from '../utils/api-response.js';
 import { asyncHandler } from '../utils/async-handler.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { deleteFromCloudinary, uploadOnCloudinary } from '../utils/cloudinary.js';
 import { availableTaskStatuses } from '../utils/constants.js';
 
 const createTask = asyncHandler(async (req, res) => {
@@ -42,6 +42,9 @@ const createTask = asyncHandler(async (req, res) => {
 
   const uploadedFile = await Promise.all(
     files.map(async (file) => {
+      if (file.size > 10 * 1024 * 1024) {
+        throw new apiError(400, 'File too large (max 10MB)', false);
+      }
       const cloudinaryResult = await uploadOnCloudinary(file.path);
       return {
         url: cloudinaryResult.url,
@@ -50,7 +53,7 @@ const createTask = asyncHandler(async (req, res) => {
         size: file.size,
       };
     })
-  );
+  ).catch((err) => console.error('Cloudinary Error during Upload file', err));
 
   if (!availableTaskStatuses.includes(status)) {
     throw new apiError(400, 'Invalid status');
@@ -143,7 +146,22 @@ const updateTask = asyncHandler(async (req, res) => {
 });
 const updateTaskStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const { taskId } = req.params;
+  const { projectId, taskId } = req.params;
+
+  if (!availableTaskStatuses.includes(status)) {
+    throw new apiError(400, 'Invalid status', false);
+  }
+
+  const task = await Task.findOne({ _id: taskId, project: projectId });
+
+  const isMember = await ProjectMember.findOne({
+    project: projectId,
+    user: req.user._id,
+  });
+
+  if (!task || !isMember) {
+    throw new apiError(403, 'Not authorized');
+  }
 
   const updateStatusTask = await Task.findByIdAndUpdate(taskId, { status }, { new: true });
 
@@ -164,6 +182,12 @@ const deleteTask = asyncHandler(async (req, res) => {
   if (!task) {
     throw new apiError(400, 'task not found', false);
   }
+
+  for (const file of task.attachments) {
+    await deleteFromCloudinary(file.publicId);
+  }
+
+  await task.deleteOne();
 
   return res.status(200).json(new apiResponse(200, {}, 'task delete successfully', true));
 });

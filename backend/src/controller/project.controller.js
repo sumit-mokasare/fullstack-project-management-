@@ -157,7 +157,7 @@ const deleteProject = asyncHandler(async (req, res) => {
 });
 
 const addMemberToProject = asyncHandler(async (req, res) => {
-  console.log('user inside controller ==', req.user);
+  // console.log('user inside controller ==', req.user);
 
   const { projectId } = req.params;
   const { email, role } = req.body;
@@ -188,7 +188,7 @@ const addMemberToProject = asyncHandler(async (req, res) => {
 
 const getProjectMembers = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
-  console.log(projectId);
+  // console.log(projectId);
 
   const members = await ProjectMember.find({
     project: projectId,
@@ -206,7 +206,7 @@ const updateProjectMembers = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   const newUser = await User.findOne({ email });
-  console.log(newUser);
+  // console.log(newUser);
 
   if (!newUser) {
     throw new apiError(400, 'User not found', false);
