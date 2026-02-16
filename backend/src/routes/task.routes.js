@@ -1,11 +1,15 @@
 import { Router } from 'express';
-import { taskValidetor } from '../validatores/index.js';
+import { subtaskValidetor, taskValidetor } from '../validatores/index.js';
 import validate from '../middlewares/validator.middleware.js';
 import {
+  addSubTask,
   createTask,
+  deleteSubTask,
   deleteTask,
+  getSubTask,
   getTasks,
   getTasksById,
+  updateSubTask,
   updateTask,
   updateTaskStatus,
 } from '../controller/task.controller.js';
@@ -24,15 +28,25 @@ router
     validate,
     createTask
   )
-  .get(getTasks);
+  .get(
+    isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER, UserRolesEnum.MEMBER]),
+    getTasks
+  );
 
 router
   .route('/:projectId/updateStatus/:taskId')
-  .put(upload.none() , isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER]), updateTaskStatus);
+  .put(
+    upload.none(),
+    isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER]),
+    updateTaskStatus
+  );
 
 router
   .route('/:projectId/task/:taskId')
-  .get(isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER]), getTasksById)
+  .get(
+    isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER, UserRolesEnum.MEMBER]),
+    getTasksById
+  )
   .put(
     upload.none(),
     isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER]),
@@ -41,4 +55,31 @@ router
     updateTask
   )
   .delete(isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER]), deleteTask);
+
+// subtask routes
+
+router
+  .route('/:projectId/subtask/:taskId')
+  .post(
+    upload.none(),
+    isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER]),
+    subtaskValidetor(),
+    validate,
+    addSubTask
+  )
+  .get(
+    isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER, UserRolesEnum.MEMBER]),
+    getSubTask
+  );
+
+router
+  .route('/:projectId/updatedSubTask/:taskId/:subtaskId')
+  .put(
+    upload.none(),
+    isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER]),
+    subtaskValidetor(),
+    validate,
+    updateSubTask
+  )
+  .delete(isProjctAdmin([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_MANGER]), deleteSubTask);
 export default router;

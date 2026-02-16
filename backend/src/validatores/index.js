@@ -72,6 +72,13 @@ const taskValidetor = () => {
   ];
 };
 
+const subtaskValidetor = () => {
+  return [
+    body('title').notEmpty().isLength({ min: 3 }).withMessage('Invalid of empty title'),
+    body('isCompleted').isBoolean().withMessage('iscompleted value should be boolean'),
+  ];
+};
+
 export {
   userLoginValidator,
   userRegistrationValidatore,
@@ -79,4 +86,5 @@ export {
   projectMemberValidetor,
   updateProjectMembersValidetor,
   taskValidetor,
+  subtaskValidetor,
 };

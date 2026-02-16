@@ -192,9 +192,106 @@ const deleteTask = asyncHandler(async (req, res) => {
   return res.status(200).json(new apiResponse(200, {}, 'task delete successfully', true));
 });
 
-const addSubTask = asyncHandler(async (req, res) => {});
-const getSubTask = asyncHandler(async (req, res) => {});
-const updateSubTask = asyncHandler(async (req, res) => {});
-const deleteSubTask = asyncHandler(async (req, res) => {});
+const addSubTask = asyncHandler(async (req, res) => {
+  const { title, isCompleted } = req.body;
+  const { taskId } = req.params;
 
-export { createTask, updateTask, getTasks, getTasksById, deleteTask, updateTaskStatus };
+  console.log(typeof isCompleted);
+  
+
+  const task = await Task.findById(taskId);
+  
+  if (!task) {
+    throw new apiError(400, 'task is not found', );
+  }
+
+  const subTask = await SubTask.create({
+    title,
+    isCompleted,
+    task: task._id,
+    createdBy: req.user._id,
+  });
+
+  if (!subTask) {
+    throw new apiError(400, 'subTask is not created', );
+  }
+
+  return res.status(200).json(new apiResponse(200, subTask, 'subtask created successfully', true));
+});
+const getSubTask = asyncHandler(async (req, res) => {
+  const { taskId } = req.params;
+
+  const task = await Task.findById(taskId);
+
+  if (!task) {
+    throw new apiError(400, 'task is not found', );
+  }
+  
+  const subTasks = await SubTask.find({ task: taskId });
+
+  if (subTasks.length === 0) {
+    throw new apiError(400, 'subtask is not found', );
+  }
+  
+  return res.status(200).json(new apiResponse(200, subTasks, 'subtask fetched successfully', true));
+});
+const updateSubTask = asyncHandler(async (req, res) => {
+  const { title, isCompleted } = req.body;
+  const { taskId , subtaskId } = req.params;
+
+  const subtask = await SubTask.findOne({
+    _id: subtaskId,
+    task:taskId
+  });
+
+  if (!subtask) {
+    throw new apiError(404, 'subtask is not found', );
+  }
+
+  const updatedSubTask = await SubTask.findByIdAndUpdate(
+    subtask._id,
+    {
+      title,
+      isCompleted,
+    },
+    { new: true }
+  ).populate('createdBy', 'avatar username');
+  
+  if (!updatedSubTask) {
+    throw new apiError(404, 'Field to update subtask ', );
+  }
+  
+  return res
+    .status(200)
+    .json(new apiResponse(200, updatedSubTask, 'SubTask update successfully', true));
+});
+
+const deleteSubTask = asyncHandler(async (req, res) => {
+  const { subtaskId } = req.params;
+
+  const subtask = await SubTask.findByIdAndDelete(subtaskId).populate(
+    'createdBy',
+    'avatar username'
+  );
+
+  if (!subtask) {
+    throw new apiError(400, 'for some resone subtask not deleted', false);
+  }
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, deleteSubTask, 'SubTask delete successfully', true));
+});
+
+export {
+  createTask,
+  updateTask,
+  getTasks,
+  getTasksById,
+  deleteTask,
+  updateTaskStatus,
+  addSubTask,
+  getSubTask,
+  updateSubTask,
+  deleteSubTask
+};
