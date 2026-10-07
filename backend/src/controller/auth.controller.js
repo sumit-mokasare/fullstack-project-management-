@@ -66,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
   user.emailVerificationTokenExpiry = tokenExpiry;
   await user.save();
 
-  const verificationUrl = `${process.env.BASE_URL}/api/v1/userAuth/verify/${unHashedToken}`;
+  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email-success/${unHashedToken}`;
   const content = emailVerificationMailgenContent(user.username, verificationUrl);
   await sentMail({
     email: user.email,
@@ -130,7 +130,7 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
   user.emailVerificationTokenExpiry = tokenExpiry;
   await user.save();
 
-  const verificationUrl = `${process.env.BASE_URL}/api/v1/userAuth/verify/${unHashedToken}`;
+  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email-success/${unHashedToken}`;
   const content = emailVerificationMailgenContent(user.username, verificationUrl);
   await sentMail({
     email: user.email,
@@ -158,7 +158,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const isPasswordCorrect = await user.isCorrectPassword(password);
 
   if (!isPasswordCorrect) {
-    throw new apiError(400, 'Invalied email or passoword', false);
+    throw new apiError(401, 'Invalied email or passoword', false);
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
@@ -180,7 +180,6 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-
   await User.findByIdAndUpdate(
     req.user._id,
     {
@@ -217,7 +216,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 
     if (incomingRefreshtoken !== user.refreshToken) {
-      throw new apiError(400, 'Refresh token is exired or used');
+      throw new apiError(400, 'Refresh token is expired or used');
     }
 
     // generate new access and refresh token
@@ -254,7 +253,7 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   user.forgotPasswordTokenExpiry = tokenExpiry;
   await user.save({ validateBeforeSave: false });
 
-  const forgotPasswordUrl = `${process.env.BASE_URL}/api/v1/userAuth/forgotPassword/${unHashedToken}`;
+  const forgotPasswordUrl = `${process.env.BASE_URL}/reset-password/${unHashedToken}`;
   const content = forgotPassowordMailgenContent(user.username, forgotPasswordUrl);
   sentMail({
     email: user.email,
@@ -275,10 +274,9 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
-
   const { token } = req.params;
   const { password } = req.body;
-  
+
   const hashedIncomingToken = crypto.createHash('sha256').update(token).digest('hex');
 
   const user = await User.findOne({
@@ -293,8 +291,8 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   }
 
   user.password = password;
-  user.forgotPasswordToken = undefined
-  user.forgotPasswordTokenExpiry = undefined
+  user.forgotPasswordToken = undefined;
+  user.forgotPasswordTokenExpiry = undefined;
   await user.save({ validateBeforeSave: false });
   return res.status(200).json(new apiResponse(200, {}, 'Password successfully changes', true));
 });

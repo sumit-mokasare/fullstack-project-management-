@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { api } from '@/lib/api';
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { api } from "@/lib/api";
 
 const AuthContext = createContext(null);
 
@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
-    const res = await api.get('/userAuth/Profile');
+    const res = await api.get("/userAuth/Profile");
     if (res.success && res.data) {
       setUser(res.data);
     } else {
@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
   }, [fetchProfile]);
 
   const login = async (email, password) => {
-    const res = await api.post('/userAuth/loginUser', { email, password });
+    const res = await api.post("/userAuth/loginUser", { email, password });
     if (res.success && res.data) {
       api.setTokens(res.data.accessToken, res.data.refreshToken);
       setUser(res.data.user);
@@ -37,13 +37,17 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await api.post('/userAuth/logoutUser', {});
+    await api.post("/userAuth/logoutUser", {});
     api.clearTokens();
     setUser(null);
   };
 
   const value = {
-    user, loading, login, logout, fetchProfile,
+    user,
+    loading,
+    login,
+    logout,
+    fetchProfile,
     isAuthenticated: !!user,
   };
 
@@ -52,6 +56,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

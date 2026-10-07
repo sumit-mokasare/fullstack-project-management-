@@ -1,0 +1,3 @@
+1 .  login page == error message handling
+2 .  verify acount json format handle that in backend
+3 .  avatar defualt if no image

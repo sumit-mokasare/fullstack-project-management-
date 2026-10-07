@@ -188,11 +188,11 @@ const addMemberToProject = asyncHandler(async (req, res) => {
 
 const getProjectMembers = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
-  // console.log(projectId);
+  // console.log(projectId);g
 
   const members = await ProjectMember.find({
     project: projectId,
-  }).populate('user', 'fullname avatar username');
+  }).populate('user', 'fullname avatar username email');
 
   if (!members) {
     throw new apiError(400, 'membs not found', false);
@@ -275,5 +275,5 @@ export {
   getProjectMembers,
   updateProjectMembers,
   updateMemberRole,
-  deleteMember, 
+  deleteMember,
 };
