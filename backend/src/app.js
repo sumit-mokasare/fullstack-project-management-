@@ -18,10 +18,12 @@ app.use(express.json({ limit: '16kb' }));
 app.use(express.static('public'));
 app.use(cookieParser());
 
+console.log(process.env.CORS_ORIGIN);
+
 // cors configurataion
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(',') || 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     // origin: 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
